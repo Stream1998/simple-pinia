@@ -43,7 +43,6 @@ function createOptionsStore(id, options, pinia) {
 function createSetupStore(id, setup, pinia, isComposition) {
 	function merge (target, partial){
 		for (const key in partial) {
-			if (!target.hasOwnProperty(key)) continue;
 			const targetValue = target[key];
 			const partialValue = partial[key];
 			if (isObject(targetValue) && isObject(partialValue) && !isRef(target)) {
