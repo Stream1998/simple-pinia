@@ -10,7 +10,7 @@
 
 - 同时支持 `Vue2` 和 `Vue3`
 - 移除了 `mutation`，`action` 同时支持同步和异步方法
-- 移除了 `module`，`store` 之间可以相互调用 
+- 移除了 `module`，`store` 之间可以相互调用
 - 支持 `TypeScript`
 
 `store` 是一个保存数据状态和业务逻辑的实体。
@@ -22,14 +22,12 @@
 1. 在 `main.js` 里使用 `pinia` 插件
 
 ```js
-import { createApp } from 'vue';
-import App from './App.vue'
-import { createPinia } from 'pinia';
+import { createApp } from "vue";
+import App from "./App.vue";
+import { createPinia } from "pinia";
 const pinia = createPinia();
 
-createApp(App)
-	.use(pinia)
-	.mount('#app');
+createApp(App).use(pinia).mount("#app");
 ```
 
 2. 在 `store` 目录下，使用 `defineStore` 定义模块
@@ -38,22 +36,22 @@ createApp(App)
 // useCounter.js
 import { defineStore } from "pinia";
 
-export const useCounterStore = defineStore('counter', {
-	state: () => {
-		return {
-			count: 1,
-		}
-	},
-	getters: {
-		double() {
-			return this.count * 2;
-		}
-	},
-	actions: {
-		increment(payload) {
-			this.count += payload;
-		}
-	}
+export const useCounterStore = defineStore("counter", {
+  state: () => {
+    return {
+      count: 1,
+    };
+  },
+  getters: {
+    double() {
+      return this.count * 2;
+    },
+  },
+  actions: {
+    increment(payload) {
+      this.count += payload;
+    },
+  },
 });
 ```
 
@@ -61,18 +59,17 @@ export const useCounterStore = defineStore('counter', {
 
 ```html
 <script setup>
-import { useCounterStore } from './store/useCounter';
+  import { useCounterStore } from "./store/useCounter";
 
-const store = useCounterStore();
-
+  const store = useCounterStore();
 </script>
 
 <template>
   <div>{{ store.count }}</div>
   <div>{{ store.double }}</div>
-<!-- 虽然这样可以实现效果，但无法监听该数据的变化 -->
-<!-- <button @click="store.count++">increment</button> -->
-<!-- 最好使用一个方法来修改数据 -->
+  <!-- 虽然这样可以实现效果，但无法监听该数据的变化 -->
+  <!-- <button @click="store.count++">increment</button> -->
+  <!-- 最好使用一个方法来修改数据 -->
   <button @click="store.increment(1)">increment</button>
 </template>
 ```
@@ -87,12 +84,12 @@ const store = useCounterStore();
 
 ```js
 export const createPinia = () => {
-	const pinia = {
-		// app 为 Vue 的实例对象
-		install(app){ }	
-	}
-	return pinia;
-}
+  const pinia = {
+    // app 为 Vue 的实例对象
+    install(app) {},
+  };
+  return pinia;
+};
 ```
 
 为了用户能够通过全局属性使用 `pinia`。
@@ -124,20 +121,20 @@ const _store = new Map();
 完整代码：
 
 ```js
-import { ref } from 'vue';
+import { ref } from "vue";
 export const PINIA_SYMBOL = Symbol();
 export const createPinia = () => {
-	const state = ref({});
-	const pinia = {
-		install(app){
-			app.config.globalProperties.$pinia = pinia;
-			app.provide(PINIA_SYMBOL, pinia);
-		},
-		state,	
-		_store: new Map(),
-	}
-	return pinia;
-}
+  const state = ref({});
+  const pinia = {
+    install(app) {
+      app.config.globalProperties.$pinia = pinia;
+      app.provide(PINIA_SYMBOL, pinia);
+    },
+    state,
+    _store: new Map(),
+  };
+  return pinia;
+};
 ```
 
 ### defineStore
@@ -150,31 +147,31 @@ export const createPinia = () => {
 
 ```js
 function createOptionsStore(id, options, pinia) {
-	const { state, getters = {}, actions } = options;
+  const { state, getters = {}, actions } = options;
 
-	function setup() {
-		// 将 state 状态存储到全局 state
-		pinia.state.value[id] = state ? state() : {};
-		// 避免解构后失去响应式
-		const localState = toRefs(pinia.state.value[id]);
-		const setupStore = Object.assign(
-			// 将 state 转变为响应式对象
-			localState,
-			// 将 getters 转变为计算属性
-			Object.keys(getters).reduce((computeds, gettersKey) => {
-				computeds[gettersKey] = computed(() => {
-					// 解决 store 未定义就使用的问题
-					const store = pinia._store.get(id);
-					getters[gettersKey].call(store)
-				});
-				return computeds;
-			}, {}),
-			actions,
-		);
-		return setupStore;
-	}
-	const store = createSetupStore(id, setup, pinia);
-	return store;
+  function setup() {
+    // 将 state 状态存储到全局 state
+    pinia.state.value[id] = state ? state() : {};
+    // 避免解构后失去响应式
+    const localState = toRefs(pinia.state.value[id]);
+    const setupStore = Object.assign(
+      // 将 state 转变为响应式对象
+      localState,
+      // 将 getters 转变为计算属性
+      Object.keys(getters).reduce((computeds, gettersKey) => {
+        computeds[gettersKey] = computed(() => {
+          // 解决 store 未定义就使用的问题
+          const store = pinia._store.get(id);
+          getters[gettersKey].call(store);
+        });
+        return computeds;
+      }, {}),
+      actions
+    );
+    return setupStore;
+  }
+  const store = createSetupStore(id, setup, pinia);
+  return store;
 }
 ```
 
@@ -182,26 +179,28 @@ function createOptionsStore(id, options, pinia) {
 
 ```js
 function createSetupStore(id, setup, pinia, isComposition) {
-	// 创建响应式对象
-	const store = reactive(paritalStore);
-	const setupStore = setup();
-	// 如果直接使用 Composition API 创建，则全局状态未创建
-	if (isComposition) {
-		pinia.state.value[id] = {};
-	}
-	for (const key in setupStore) {
-		const value = setupStore[key];
-		if (typeof value === 'function') { // 如果是函数，就绑定 this 指向，并传递参数
-			setupStore[key] = wrapAction(value);
-		} else if(isComposition){ // 将值(不包括计算属性)收集到全局状态中
-			if(!isComputed(value)){
-				pinia.state.value[id][key] = value;
-			}
-		}
-	}
-	Object.assign(store, setupStore);
-	pinia._store.set(id, store);
-	return store;
+  // 创建响应式对象
+  const store = reactive(paritalStore);
+  const setupStore = setup();
+  // 如果直接使用 Composition API 创建，则全局状态未创建
+  if (isComposition) {
+    pinia.state.value[id] = {};
+  }
+  for (const key in setupStore) {
+    const value = setupStore[key];
+    if (typeof value === "function") {
+      // 如果是函数，就绑定 this 指向，并传递参数
+      setupStore[key] = wrapAction(value);
+    } else if (isComposition) {
+      // 将值(不包括计算属性)收集到全局状态中
+      if (!isComputed(value)) {
+        pinia.state.value[id][key] = value;
+      }
+    }
+  }
+  Object.assign(store, setupStore);
+  pinia._store.set(id, store);
+  return store;
 }
 ```
 
@@ -213,30 +212,30 @@ function createSetupStore(id, setup, pinia, isComposition) {
 
 ```js
 const isObject = (obj) => {
-	return typeof obj === 'object' && obj !== null;
-}
+  return typeof obj === "object" && obj !== null;
+};
 
-function merge (target, partial){
-	for (const key in partial) {
-		const targetValue = target[key];
-		const partialValue = partial[key];
-		if (isObject(targetValue) && isObject(partialValue) && !isRef(target)) {
-			target[key] = merge(targetValue, partialValue);
-		} else {
-			target[key] = partialValue;
-		}
-	}
+function merge(target, partial) {
+  for (const key in partial) {
+    const targetValue = target[key];
+    const partialValue = partial[key];
+    if (isObject(targetValue) && isObject(partialValue) && !isRef(target)) {
+      target[key] = merge(targetValue, partialValue);
+    } else {
+      target[key] = partialValue;
+    }
+  }
 }
 
 function $patch(partialStateOrMutator) {
-		// 获取修改前的所有状态
-		const state = pinia.state.value[id];
-		if (typeof partialStateOrMutator === 'function') {
-			partialStateOrMutator(state);
-		} else {
-			merge(state, partialStateOrMutator);
-		}
-	}
+  // 获取修改前的所有状态
+  const state = pinia.state.value[id];
+  if (typeof partialStateOrMutator === "function") {
+    partialStateOrMutator(state);
+  } else {
+    merge(state, partialStateOrMutator);
+  }
+}
 ```
 
 ### $reset
@@ -244,10 +243,10 @@ function $patch(partialStateOrMutator) {
 能够将 `store` 还原到初始状态。 只有 `Options API` 支持，`Composition API` 无法跟踪多个 `state` 状态。
 
 ```js
-store.$reset = function() {
-		const newState = state ? state() : {};
-		this.$patch(newState);
-	}
+store.$reset = function () {
+  const newState = state ? state() : {};
+  this.$patch(newState);
+};
 ```
 
 ### $subscribe
@@ -257,10 +256,10 @@ store.$reset = function() {
 
 ```js
 function $subscribe(callback) {
-		watch(pinia.state.value[id], state => {
-			callback({id}, state);	
-		})	
-	}
+  watch(pinia.state.value[id], (state) => {
+    callback({ id }, state);
+  });
+}
 ```
 
 ### $onAction
@@ -270,15 +269,15 @@ function $subscribe(callback) {
 
 ```js
 const subscribe = (events, callback) => {
-	events.push(callback);
-	return function unsubscribe() {
-		const index = events.indexOf(callback);
-		index > -1 && events.splice(index, 1);
-	}
-}
+  events.push(callback);
+  return function unsubscribe() {
+    const index = events.indexOf(callback);
+    index > -1 && events.splice(index, 1);
+  };
+};
 const trigger = (events, ...args) => {
-	events.slice().forEach(cb => cb(...args));	
-}
+  events.slice().forEach((cb) => cb(...args));
+};
 ```
 
 订阅 `action` 函数
@@ -292,35 +291,35 @@ const $onAction = subscribe.bind(null, actionEvents);
 
 ```js
 function wrapAction(action) {
-	return function (...args) {
-		const afterCallbacks = [];
-		const onErrorCallbacks = [];
-		const after = (cb) => {
-			afterCallbacks.push(cb);
-		}
-		const onError = (cb) => {
-			onErrorCallbacks.push(cb);
-		}
-		trigger(actionEvents, {after, onError});
+  return function (...args) {
+    const afterCallbacks = [];
+    const onErrorCallbacks = [];
+    const after = (cb) => {
+      afterCallbacks.push(cb);
+    };
+    const onError = (cb) => {
+      onErrorCallbacks.push(cb);
+    };
+    trigger(actionEvents, { after, onError });
 
-		let result;
-		// 如果是普通函数
-		try {
-			result = action.call(store, ...args);
-			trigger(afterCallbacks, result);
-		} catch (error) {
-			trigger(onErrorCallbacks, error);	
-		}
+    let result;
+    // 如果是普通函数
+    try {
+      result = action.call(store, ...args);
+      trigger(afterCallbacks, result);
+    } catch (error) {
+      trigger(onErrorCallbacks, error);
+    }
 
-		// 如果是异步函数
-		if(result instanceof Promise) {
-			result
-				.then(value => trigger(afterCallbacks, value))
-				.catch(error => trigger(onErrorCallbacks, error));
-		}
+    // 如果是异步函数
+    if (isPromise(result)) {
+      result
+        .then((value) => trigger(afterCallbacks, value))
+        .catch((error) => trigger(onErrorCallbacks, error));
+    }
 
-		return result;
-	}
+    return result;
+  };
 }
 ```
 
@@ -329,14 +328,14 @@ function wrapAction(action) {
 语法糖，简化 `state` 的使用。
 
 ```js
-Object.defineProperty(store, '$state', {
-		get() {
-			return pinia.state.value[id];
-		},
-		set(newState) {
-			this.$patch(newState);
-		}
-	})
+Object.defineProperty(store, "$state", {
+  get() {
+    return pinia.state.value[id];
+  },
+  set(newState) {
+    this.$patch(newState);
+  },
+});
 ```
 
 ### use
@@ -352,40 +351,39 @@ Object.defineProperty(store, '$state', {
 - 仅应用插件于特定 `store`
 
 ```js
-export function createPinia () {
-	const _plugin = [];
-	const pinia = {
-		//...,
-		// 使用插件，可链式调用
-		use(plugin) {
-			this._plugin.push(plugin);
-			return this;
-		},
-		// 用于存储插件
-		_plugin,
-
-	}
-	return pinia;
+export function createPinia() {
+  const _plugin = [];
+  const pinia = {
+    //...,
+    // 使用插件，可链式调用
+    use(plugin) {
+      this._plugin.push(plugin);
+      return this;
+    },
+    // 用于存储插件
+    _plugin,
+  };
+  return pinia;
 }
 ```
 
 在创建 `store` 完成后，执行所有插件
 
 ```js
-pinia._plugin.forEach(plugin => plugin({store, id}));
+pinia._plugin.forEach((plugin) => plugin({ store, id }));
 ```
 
 **持久化插件的实现原理**
 
 ```js
 function persistPlugin() {
-	return ({ store, id }) => {
-		const oldState = JSON.parse(localStorage.getItem(id) || '{}');
-		store.$state = oldState;
-		store.$subscribe((mutation, state) => {
-			localStorage.setItem(id, JSON.stringify(state));			
-		})
-	}
+  return ({ store, id }) => {
+    const oldState = JSON.parse(localStorage.getItem(id) || "{}");
+    store.$state = oldState;
+    store.$subscribe((mutation, state) => {
+      localStorage.setItem(id, JSON.stringify(state));
+    });
+  };
 }
 ```
 
@@ -396,15 +394,15 @@ function persistPlugin() {
 
 ```js
 export function storeToRefs(store) {
-	// 获取 store 的原始值，确保不会触发 getter/setter 方法
-	const raw = toRaw(store);
-	const result = {};
-	for(const key in raw) {
-		const value = raw[key];
-		if(isRef(value) || isReactive(value)) {
-			result[key] = toRef(value);
-		}
-	}
-	return result;
+  // 获取 store 的原始值，确保不会触发 getter/setter 方法
+  const raw = toRaw(store);
+  const result = {};
+  for (const key in raw) {
+    const value = raw[key];
+    if (isRef(value) || isReactive(value)) {
+      result[key] = toRef(value);
+    }
+  }
+  return result;
 }
 ```
